@@ -3,6 +3,10 @@
 #include <hip/hip_runtime.h>
 #include <zfp.h>
 #include "compress.h"
+#include "decompress.h"
+
+
+
 
 
 #define HIP_ERRCHK(err) (hip_errchk(err, __FILE__, __LINE__ ))
@@ -29,7 +33,7 @@ void print_state(const double* const X, const int size)
 int main(int argc, char *argv[])
 {
   int nx = 100;
-  const double rate = 4.0;
+  const double rate = 10.0;
   double *X_gpu;
   double *buffer_gpu;
   double X[nx];
@@ -42,8 +46,9 @@ int main(int argc, char *argv[])
 
   // Initialise the initial state
   for (int i = 0; i < nx; i++) {
-      X[i] = double(i);
+      X[i] = double(i)/10;
   }
+  print_state(X, nx);
 
   HIP_ERRCHK(hipMalloc(&X_gpu, sizeof(double) * nx));
 
@@ -60,7 +65,15 @@ int main(int argc, char *argv[])
   if (!ret) {
     fprintf(stderr, "compression failed\n");
   }
-  else
-    fwrite(buffer, 1, ret, stdout);
+
+  ret = decompress(X_gpu,nx, buffer_gpu, rate, 2);
+
+  if (!ret) {
+    fprintf(stderr, "decompression failed\n");
+  }
+
+  HIP_ERRCHK(hipMemcpy(X, X_gpu, sizeof(double) * nx, hipMemcpyDeviceToHost));
+  HIP_ERRCHK(hipFree(X_gpu));
+  print_state(X, nx);
   return 0;
 }
