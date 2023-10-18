@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+#SBATCH -p small-g                        # Partition
+#SBATCH --ntasks 1                        # number of cpu
+#SBATCH -t 0-0:10:00                      # wall clock time limit
+#SBATCH --gpus-per-task=1
+
+#SBATCH --account=project_462000376
+#SBATCH --reservation=ESiWACE3_small-g
+./lorenz96
