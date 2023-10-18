@@ -44,19 +44,34 @@ __global__ void lorenz96_timestep_direct(const double dt, double* const X_ensemb
     X[k] += dXdt[k] * dt;
 }
 
+__global__ void lorenz96_timestep_euler_smoothing(double* const Xp0_ensemble, const double* const Xp2_ensemble) {
+    int k = threadIdx.x;
+    int k_max = blockDim.x;
+
+    int ensemble_id = blockIdx.x;
+    int ensemble_size = gridDim.x;
+
+    double* const Xp1 = Xp0_ensemble + ensemble_id * k_max;
+    const double* const Xp0 = Xp0_ensemble + ensemble_id * k_max;
+    const double* const Xp2 = Xp2_ensemble + ensemble_id * k_max;
+
+    Xp1[k] = (Xp0[k] + Xp2[k]) * 0.5;
+}
+
 struct TimeStep {
-    TimeStep(const int k, const int ensemble_size): blocks(ensemble_size), threads(k) {}
+    TimeStep(const int k, const int ensemble_size): size(k * ensemble_size), blocks(ensemble_size), threads(k) {}
     virtual ~TimeStep() {}
 
     virtual void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) = 0;
 
-    dim3 blocks;
-    dim3 threads;
+    const int size;
+    const dim3 blocks;
+    const dim3 threads;
 };
 
 struct Direct: TimeStep {
     Direct(const int k, const int ensemble_size): TimeStep(k, ensemble_size), dXdt_ensemble_gpu(nullptr) {
-        HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * k * ensemble_size));
+        HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * this->size));
     }
 
     ~Direct() {
@@ -69,6 +84,36 @@ struct Direct: TimeStep {
     }
 
     double* dXdt_ensemble_gpu;
+};
+
+struct EulerSmoothing: TimeStep {
+    EulerSmoothing(const int k, const int ensemble_size): TimeStep(k, ensemble_size), dXdt_ensemble_gpu(nullptr) {
+        HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * this->size));
+        HIP_ERRCHK(hipMalloc(&this->Xtemp_ensemble_gpu, sizeof(double) * this->size));
+    }
+
+    ~EulerSmoothing() {
+        HIP_ERRCHK(hipFree(this->dXdt_ensemble_gpu));
+        HIP_ERRCHK(hipFree(this->Xtemp_ensemble_gpu));
+    }
+
+    void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) {
+        HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
+
+        // Xtemp = X_(n+1) = X_(n) + X'_(n) * dt
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+
+        // Xtemp = X_(n+2) = X_(n+1) + X'_(n+1) * dt
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+
+        // X = X_(n_1) = ( X_(n) + X_(n+2) ) * 0.5
+        lorenz96_timestep_euler_smoothing<<<this->blocks, this->threads>>>(X_ensemble_gpu, this->Xtemp_ensemble_gpu);
+    }
+
+    double* dXdt_ensemble_gpu;
+    double* Xtemp_ensemble_gpu;
 };
 
 void print_state(const double* const X, const int k, const double t)
@@ -145,7 +190,7 @@ int main(int argc, char *argv[])
     dim3 blocks(ensemble_size);
     dim3 threads(k);
 
-    auto time_step = Direct(k, ensemble_size);
+    auto time_step = EulerSmoothing(k, ensemble_size);
 
     double t = 0.0;
 
