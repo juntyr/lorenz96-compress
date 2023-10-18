@@ -58,6 +58,22 @@ __global__ void lorenz96_timestep_euler_smoothing(double* const Xp0_ensemble, co
     Xp1[k] = (Xp0[k] + Xp2[k]) * 0.5;
 }
 
+__global__ void lorenz96_timestep_runge_kutta(double* const dXdt_ensemble, const double* const k1_ensemble, const double* const k2_ensemble, const double* const k3_ensemble, const double* const k4_ensemble) {
+    int k = threadIdx.x;
+    int k_max = blockDim.x;
+
+    int ensemble_id = blockIdx.x;
+    int ensemble_size = gridDim.x;
+
+    double* const dXdt = dXdt_ensemble + ensemble_id * k_max;
+    const double* const k1 = k1_ensemble + ensemble_id * k_max;
+    const double* const k2 = k2_ensemble + ensemble_id * k_max;
+    const double* const k3 = k3_ensemble + ensemble_id * k_max;
+    const double* const k4 = k4_ensemble + ensemble_id * k_max;
+
+    dXdt[k] = (k1[k] + k2[k]*2.0 + k3[k]*2.0 + k4[k]) / 6.0;
+}
+
 struct TimeStep {
     TimeStep(const int k, const int ensemble_size): size(k * ensemble_size), blocks(ensemble_size), threads(k) {}
     virtual ~TimeStep() {}
@@ -70,7 +86,7 @@ struct TimeStep {
 };
 
 struct Direct: TimeStep {
-    Direct(const int k, const int ensemble_size): TimeStep(k, ensemble_size), dXdt_ensemble_gpu(nullptr) {
+    Direct(const int k, const int ensemble_size): TimeStep(k, ensemble_size) {
         HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * this->size));
     }
 
@@ -87,7 +103,7 @@ struct Direct: TimeStep {
 };
 
 struct EulerSmoothing: TimeStep {
-    EulerSmoothing(const int k, const int ensemble_size): TimeStep(k, ensemble_size), dXdt_ensemble_gpu(nullptr) {
+    EulerSmoothing(const int k, const int ensemble_size): TimeStep(k, ensemble_size) {
         HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * this->size));
         HIP_ERRCHK(hipMalloc(&this->Xtemp_ensemble_gpu, sizeof(double) * this->size));
     }
@@ -98,6 +114,7 @@ struct EulerSmoothing: TimeStep {
     }
 
     void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) {
+        // Xtemp = X_(n)
         HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
 
         // Xtemp = X_(n+1) = X_(n) + X'_(n) * dt
@@ -108,12 +125,63 @@ struct EulerSmoothing: TimeStep {
         lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
         lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
 
-        // X = X_(n_1) = ( X_(n) + X_(n+2) ) * 0.5
+        // X = X_(n_1) = ( X_(n) + X_(n+2) ) / 2
         lorenz96_timestep_euler_smoothing<<<this->blocks, this->threads>>>(X_ensemble_gpu, this->Xtemp_ensemble_gpu);
     }
 
     double* dXdt_ensemble_gpu;
     double* Xtemp_ensemble_gpu;
+};
+
+struct RungeKutta: TimeStep {
+    RungeKutta(const int k, const int ensemble_size): TimeStep(k, ensemble_size) {
+        HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * this->size));
+        HIP_ERRCHK(hipMalloc(&this->Xtemp_ensemble_gpu, sizeof(double) * this->size));
+        HIP_ERRCHK(hipMalloc(&this->k1_ensemble_gpu, sizeof(double) * this->size));
+        HIP_ERRCHK(hipMalloc(&this->k2_ensemble_gpu, sizeof(double) * this->size));
+        HIP_ERRCHK(hipMalloc(&this->k3_ensemble_gpu, sizeof(double) * this->size));
+        HIP_ERRCHK(hipMalloc(&this->k4_ensemble_gpu, sizeof(double) * this->size));
+    }
+
+    ~RungeKutta() {
+        HIP_ERRCHK(hipFree(this->dXdt_ensemble_gpu));
+        HIP_ERRCHK(hipFree(this->Xtemp_ensemble_gpu));
+        HIP_ERRCHK(hipFree(this->k1_ensemble_gpu));
+        HIP_ERRCHK(hipFree(this->k2_ensemble_gpu));
+        HIP_ERRCHK(hipFree(this->k3_ensemble_gpu));
+        HIP_ERRCHK(hipFree(this->k4_ensemble_gpu));
+    }
+
+    void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) {
+        // k1 = X'(X_n)
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, X_ensemble_gpu, this->k1_ensemble_gpu);
+
+        // k2 = X'(X_n + k1 * dt/2)
+        HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt * 0.5, this->Xtemp_ensemble_gpu, this->k1_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->k2_ensemble_gpu);
+
+        // k3 = X'(X_n + k2 * dt/2)
+        HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt * 0.5, this->Xtemp_ensemble_gpu, this->k2_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->k3_ensemble_gpu);
+
+        // k4 = X'(X_n + k3 * dt)
+        HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->k3_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->k4_ensemble_gpu);
+
+        // X = X_(n_1) = X_(n) + (k1 + k2*2 + k3*2 + k4) * dt/6
+        lorenz96_timestep_runge_kutta<<<this->blocks, this->threads>>>(this->dXdt_ensemble_gpu, this->k1_ensemble_gpu, this->k2_ensemble_gpu, this->k3_ensemble_gpu, this->k4_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, X_ensemble_gpu, this->dXdt_ensemble_gpu);
+    }
+
+    double* dXdt_ensemble_gpu;
+    double* Xtemp_ensemble_gpu;
+    double* k1_ensemble_gpu;
+    double* k2_ensemble_gpu;
+    double* k3_ensemble_gpu;
+    double* k4_ensemble_gpu;
 };
 
 void print_state(const double* const X, const int k, const double t)
@@ -190,7 +258,7 @@ int main(int argc, char *argv[])
     dim3 blocks(ensemble_size);
     dim3 threads(k);
 
-    auto time_step = EulerSmoothing(k, ensemble_size);
+    auto time_step = RungeKutta(k, ensemble_size);
 
     double t = 0.0;
 
