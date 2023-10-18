@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream> 
+#include <random>
 #include <hip/hip_runtime.h>
 
 #include "cmdparser.hpp"
@@ -199,11 +200,13 @@ void print_state(const double* const X, const int k, const double t)
 
 void configure_cli(cli::Parser& parser) {
     parser.set_required<double>("t", "max-time");
-    parser.set_optional<double>("s", "dt", 0.01);
+    parser.set_optional<double>("d", "dt", 0.01);
     parser.set_optional<double>("f", "forcing", 8.0);
     parser.set_optional<int>("k", "", 36);
-    parser.set_optional<int>("e", "ensemble-size", 10);
+    parser.set_optional<int>("e", "ensemble-size", 11);
     parser.set_optional<std::string>("o", "output", "state");
+    parser.set_optional<int>("s", "seed", 42);
+    parser.set_optional<double>("p", "ensemble-perturbation", 0.001);
 }
 
 int main(int argc, char *argv[])
@@ -213,11 +216,18 @@ int main(int argc, char *argv[])
     parser.run_and_exit_if_error();
     
     double max_time = parser.get<double>("t");
-    double dt = parser.get<double>("s");
+    double dt = parser.get<double>("d");
     double forcing = parser.get<double>("f");
     int k = parser.get<int>("k");
     int ensemble_size = parser.get<int>("e");
     std::string output = parser.get<std::string>("o");
+    int seed = parser.get<int>("s");
+    double ensemble_perturbation_stdv = parser.get<double>("p");
+
+    if ((ensemble_size % 2) != 1) {
+        std::cout << "ensemble-size must be an odd integer" << std::endl;
+        return 1;
+    }
 
     std::cout << "Lorenz96(k=" << k << ", F=" << forcing << ", dt=" << dt << ", t_max=" << max_time << ")" << std::endl;
     std::cout << " running ensemble of size " << ensemble_size << " and saving to '" << output << "_[i]'" << std::endl << std::endl;
@@ -233,6 +243,21 @@ int main(int argc, char *argv[])
     }
     for (int i = 0; i < ensemble_size; i++) {
         X_ensemble[k*i] = 1.0;
+    }
+
+    std::mt19937 rng;
+    rng.seed(seed);
+
+    std::normal_distribution<double> ensemble_perturbation(0.0, ensemble_perturbation_stdv);
+
+    // Initialise the perturbations, keep the first ensemble member perfectly centred
+    for (int i = 0; i < (ensemble_size / 2); i++) {
+        for (int j = 0; j < k; j++) {
+            double p = ensemble_perturbation(rng);
+
+            X_ensemble[(1 + i*2 + 0)*k + j] += p;
+            X_ensemble[(1 + i*2 + 1)*k + j] -= p;
+        }
     }
 
     std::ofstream out_files[ensemble_size];

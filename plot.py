@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-s", "--dt", default=0.01, type=float)
 parser.add_argument("-k", default=36, type=int)
-parser.add_argument("-e", "--ensemble-size", default=10, type=int)
+parser.add_argument("-e", "--ensemble-size", default=11, type=int)
 parser.add_argument("-o", "--output", default="state", type=Path)
 
 args = parser.parse_args()
