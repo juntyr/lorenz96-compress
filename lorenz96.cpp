@@ -44,6 +44,33 @@ __global__ void lorenz96_timestep_direct(const double dt, double* const X_ensemb
     X[k] += dXdt[k] * dt;
 }
 
+struct TimeStep {
+    TimeStep(const int k, const int ensemble_size): blocks(ensemble_size), threads(k) {}
+    virtual ~TimeStep() {}
+
+    virtual void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) = 0;
+
+    dim3 blocks;
+    dim3 threads;
+};
+
+struct Direct: TimeStep {
+    Direct(const int k, const int ensemble_size): TimeStep(k, ensemble_size), dXdt_ensemble_gpu(nullptr) {
+        HIP_ERRCHK(hipMalloc(&this->dXdt_ensemble_gpu, sizeof(double) * k * ensemble_size));
+    }
+
+    ~Direct() {
+        HIP_ERRCHK(hipFree(this->dXdt_ensemble_gpu));
+    }
+
+    void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) {
+        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, X_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, X_ensemble_gpu, this->dXdt_ensemble_gpu);
+    }
+
+    double* dXdt_ensemble_gpu;
+};
+
 void print_state(const double* const X, const int k, const double t)
 {
     std::cout << "X at t=" << t << ":" << std::endl;
@@ -85,7 +112,7 @@ int main(int argc, char *argv[])
     int size = k * ensemble_size;
 
     double X_ensemble[size];
-    double *X_ensemble_gpu, *dXdt_ensemble_gpu;
+    double *X_ensemble_gpu;
 
     // Initialise the initial state
     for (int i = 0; i < size; i++) {
@@ -113,18 +140,17 @@ int main(int argc, char *argv[])
     }
 
     HIP_ERRCHK(hipMalloc(&X_ensemble_gpu, sizeof(double) * size));
-    HIP_ERRCHK(hipMalloc(&dXdt_ensemble_gpu, sizeof(double) * size));
-
     HIP_ERRCHK(hipMemcpy(X_ensemble_gpu, X_ensemble, sizeof(double) * size, hipMemcpyHostToDevice));
 
     dim3 blocks(ensemble_size);
     dim3 threads(k);
 
+    auto time_step = Direct(k, ensemble_size);
+
     double t = 0.0;
 
     while ((t += dt) <= max_time) {
-        lorenz96_tendency<<<blocks, threads>>>(forcing, X_ensemble_gpu, dXdt_ensemble_gpu);
-        lorenz96_timestep_direct<<<blocks, threads>>>(dt, X_ensemble_gpu, dXdt_ensemble_gpu);
+        time_step.time_step(X_ensemble_gpu, dt, forcing);
 
         HIP_ERRCHK(hipMemcpy(X_ensemble, X_ensemble_gpu, sizeof(double) * size, hipMemcpyDeviceToHost));
 
@@ -145,7 +171,6 @@ int main(int argc, char *argv[])
     }
 
     HIP_ERRCHK(hipFree(X_ensemble_gpu));
-    HIP_ERRCHK(hipFree(dXdt_ensemble_gpu));
 
     return 0;
 }
