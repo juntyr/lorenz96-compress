@@ -13,6 +13,6 @@ sbatch <<EOT
 
 source modules
 
-./lorenz96 ${@}
+./lorenz96 ${@} -o state_\${SLURM_JOB_ID}
 
 EOT

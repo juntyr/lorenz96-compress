@@ -26,7 +26,7 @@ __global__ void lorenz96_tendency(const double forcing, const double* const X_en
 
     int k_m2 = (k-2 + k_max) % k_max;
     int k_m1 = (k-1 + k_max) % k_max;
-    int k_p1 = k+1 % k_max;
+    int k_p1 = (k+1) % k_max;
 
     dXdt[k] = -X[k_m2]*X[k_m1] + X[k_m1]*X[k_p1] - X[k] + forcing;
 }
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < ensemble_size; i++) {
         for (int j = 0; j < k; j++) {
-            out_files[i] << X
+            out_files[i].write(reinterpret_cast<const char*>(&X_ensemble[i*k+j]), sizeof(X_ensemble[i*k+j]));
         }
     }
 
@@ -132,6 +132,12 @@ int main(int argc, char *argv[])
             std::cout << std::endl << "Final state:" << std::endl;
         }
         print_state(X_ensemble, k, t);
+
+        for (int i = 0; i < ensemble_size; i++) {
+            for (int j = 0; j < k; j++) {
+                out_files[i].write(reinterpret_cast<const char*>(&X_ensemble[i*k+j]), sizeof(X_ensemble[i*k+j]));
+            }
+        }
     }
 
     for (int i = 0; i < ensemble_size; i++) {
