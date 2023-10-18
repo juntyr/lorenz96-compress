@@ -5,6 +5,8 @@
 #include <hip/hip_runtime.h>
 
 #include "cmdparser.hpp"
+#include "compress.hpp"
+#include "decompress.hpp"
 
 /* HIP error handling macro */
 #define HIP_ERRCHK(err) (hip_errchk(err, __FILE__, __LINE__ ))
@@ -208,7 +210,7 @@ void configure_cli(cli::Parser& parser) {
     parser.set_optional<int>("s", "seed", 42);
     parser.set_optional<double>("p", "ensemble-perturbation", 0.001);
     parser.set_optional<double>("r", "zfp-fixed-rate", 64.25);
-    parser.set_optional<int>("c", "compression-frequency", 0);
+    parser.set_optional<int>("c", "compression-frequency", -1);
 }
 
 int main(int argc, char *argv[])
@@ -268,11 +270,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (compression_frequency < 0) {
-        std::cout << "the compression frequency must be non-negative" << std::endl;
-        return 1;
-    }
-
     if (compression_frequency > 0) {
         std::cout << "on-GPU compression is not yet supported" << std::endl;
         return 1;
@@ -280,12 +277,24 @@ int main(int argc, char *argv[])
 
     std::cout << "Lorenz96(k=" << k << ", F=" << forcing << ", dt=" << dt << ", t_max=" << max_time << ")" << std::endl;
     std::cout << " - running ensemble of size " << ensemble_size << " with initial perturbation N(0.0, " << ensemble_perturbation_stdv << ")" << std::endl;
+
+    if (compression_frequency < 0) {
+        std::cout << " - without compression" << std::endl;
+    } else if (compression_frequency == 0) {
+        std::cout << " - compressing every output on the CPU with ZFP(fixed_rate=" << zfp_fixed_rate << ")" << std::endl;
+    } else {
+        std::cout << " - compressing every " << compression_frequency << "-th model state online on the GPU with ZFP(fixed_rate=" << zfp_fixed_rate << ")" << std::endl;
+    }
+
     std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl << std::endl;
 
     int size = k * ensemble_size;
 
     double X_ensemble[size];
+    char X_compressed[k * sizeof(double) * 2];
     double *X_ensemble_gpu;
+
+    HIP_ERRCHK(hipMalloc(&X_ensemble_gpu, sizeof(double) * size));
 
     // Initialise the initial state
     for (int i = 0; i < size; i++) {
@@ -310,11 +319,28 @@ int main(int argc, char *argv[])
         }
     }
 
+    HIP_ERRCHK(hipMemcpy(X_ensemble_gpu, X_ensemble, sizeof(double) * size, hipMemcpyHostToDevice));
+
     std::ofstream out_files[ensemble_size];
     for (int i = 0; i < ensemble_size; i++) {
         std::stringstream file_name;
         file_name << output << "_" << i;
         out_files[i].open(file_name.str(), std::ios::out | std::ios::trunc | std::ios::binary);
+    }
+
+    if (compression_frequency == 0) {
+        for (int i = 0; i < ensemble_size; i++) {
+            int compressed_bytes = compress(X_ensemble + i*k, k, X_compressed, zfp_fixed_rate, 1);
+            if (compressed_bytes <= 0) {
+                std::cout << "ZFP compression failed" << std::endl;
+                return 1;
+            }
+            int decompressed_bytes = decompress(X_ensemble + i*k, k, X_compressed, zfp_fixed_rate, 1);
+            if (decompressed_bytes <= 0) {
+                std::cout << "ZFP decompression failed" << std::endl;
+                return 1;
+            }
+        }
     }
 
     std::cout << "Initial state:" << std::endl;
@@ -327,9 +353,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    HIP_ERRCHK(hipMalloc(&X_ensemble_gpu, sizeof(double) * size));
-    HIP_ERRCHK(hipMemcpy(X_ensemble_gpu, X_ensemble, sizeof(double) * size, hipMemcpyHostToDevice));
-
     dim3 blocks(ensemble_size);
     dim3 threads(k);
 
@@ -341,6 +364,21 @@ int main(int argc, char *argv[])
         time_step.time_step(X_ensemble_gpu, dt, forcing);
 
         HIP_ERRCHK(hipMemcpy(X_ensemble, X_ensemble_gpu, sizeof(double) * size, hipMemcpyDeviceToHost));
+
+        if (compression_frequency == 0) {
+            for (int i = 0; i < ensemble_size; i++) {
+                int compressed_bytes = compress(X_ensemble + i*k, k, X_compressed, zfp_fixed_rate, 1);
+                if (compressed_bytes <= 0) {
+                    std::cout << "ZFP compression failed" << std::endl;
+                    return 1;
+                }
+                int decompressed_bytes = decompress(X_ensemble + i*k, k, X_compressed, zfp_fixed_rate, 1);
+                if (decompressed_bytes <= 0) {
+                    std::cout << "ZFP decompression failed" << std::endl;
+                    return 1;
+                }
+            }
+        }
 
         if ((t + dt) > max_time) {
             std::cout << std::endl << "Final state:" << std::endl;
