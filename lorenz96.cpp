@@ -207,6 +207,8 @@ void configure_cli(cli::Parser& parser) {
     parser.set_optional<std::string>("o", "output", "state");
     parser.set_optional<int>("s", "seed", 42);
     parser.set_optional<double>("p", "ensemble-perturbation", 0.001);
+    parser.set_optional<double>("r", "zfp-fixed-rate", 64.25);
+    parser.set_optional<int>("c", "compression-frequency", 0);
 }
 
 int main(int argc, char *argv[])
@@ -223,14 +225,62 @@ int main(int argc, char *argv[])
     std::string output = parser.get<std::string>("o");
     int seed = parser.get<int>("s");
     double ensemble_perturbation_stdv = parser.get<double>("p");
+    double zfp_fixed_rate = parser.get<double>("r");
+    int compression_frequency = parser.get<int>("c");
+
+    if (dt <= 0.0) {
+        std::cout << "dt must be a positive number" << std::endl;
+        return 1;
+    }
+
+    if (forcing < 0.0) {
+        std::cout << "the forcing must be non-negative" << std::endl;
+        return 1;
+    }
+
+    if (k < 4) {
+        std::cout << "the Lorenz96 model requires k >= 4" << std::endl;
+        return 1;
+    }
+
+    if (ensemble_size < 1) {
+        std::cout << "the ensemble size must be positive" << std::endl;
+        return 1;
+    }
 
     if ((ensemble_size % 2) != 1) {
-        std::cout << "ensemble-size must be an odd integer" << std::endl;
+        std::cout << "the ensemble-size must be an odd integer" << std::endl;
+        return 1;
+    }
+
+    if (seed < 0) {
+        std::cout << "the seed must be non-negative" << std::endl;
+        return 1;
+    }
+
+    if (ensemble_perturbation_stdv < 0.0) {
+        std::cout << "the ensemble member perturbation must be non-negative" << std::endl;
+        return 1;
+    }
+
+    if (zfp_fixed_rate <= 0.0) {
+        std::cout << "ZFP's fixed-rate must be positive" << std::endl;
+        return 1;
+    }
+
+    if (compression_frequency < 0) {
+        std::cout << "the compression frequency must be non-negative" << std::endl;
+        return 1;
+    }
+
+    if (compression_frequency > 0) {
+        std::cout << "on-GPU compression is not yet supported" << std::endl;
         return 1;
     }
 
     std::cout << "Lorenz96(k=" << k << ", F=" << forcing << ", dt=" << dt << ", t_max=" << max_time << ")" << std::endl;
-    std::cout << " running ensemble of size " << ensemble_size << " and saving to '" << output << "_[i]'" << std::endl << std::endl;
+    std::cout << " - running ensemble of size " << ensemble_size << " with initial perturbation N(0.0, " << ensemble_perturbation_stdv << ")" << std::endl;
+    std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl << std::endl;
 
     int size = k * ensemble_size;
 
