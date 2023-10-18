@@ -5,6 +5,14 @@
 #include "compress.h"
 
 
+#define HIP_ERRCHK(err) (hip_errchk(err, __FILE__, __LINE__ ))
+static inline void hip_errchk(hipError_t err, const char *file, int line) {
+  if (err != hipSuccess) {
+    printf("\n\n%s in %s at line %d\n", hipGetErrorString(err), file, line);
+    exit(EXIT_FAILURE);
+  }
+}
+
 void print_state(const double* const X, const int size)
 {
     std::cout << "X =" << ":" << std::endl;
@@ -22,9 +30,12 @@ int main(int argc, char *argv[])
 {
   int nx = 100;
   const double rate = 4.0;
+  double *X_gpu;
+  double *buffer_gpu;
   double X[nx];
   void* buffer;      /* storage for compressed stream */
   int ret;
+
 
 
 
@@ -33,9 +44,18 @@ int main(int argc, char *argv[])
   for (int i = 0; i < nx; i++) {
       X[i] = double(i);
   }
+
+  HIP_ERRCHK(hipMalloc(&X_gpu, sizeof(double) * nx));
+
+  HIP_ERRCHK(hipMemcpy(X_gpu, X, sizeof(double) * nx, hipMemcpyHostToDevice));
+
   buffer = malloc(100);
 
-  ret = compress(X,nx,buffer, rate,1);
+  HIP_ERRCHK(hipMalloc(&buffer_gpu, sizeof(double) * nx));
+
+  HIP_ERRCHK(hipMemcpy(buffer_gpu, buffer, sizeof(double) * nx, hipMemcpyHostToDevice));
+
+  ret = compress(X_gpu,nx, buffer_gpu, rate, 2);
 
   if (!ret) {
     fprintf(stderr, "compression failed\n");
