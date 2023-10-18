@@ -18,4 +18,8 @@ for i in range(args.ensemble_size):
     data = np.fromfile(file_path, dtype=np.double).reshape(-1, args.k)
 
     print(file_path)
-    print(data)
+
+    for j in range(data.shape[0]):
+        print(f"n={j}: {data[j]}")
+
+    print()
