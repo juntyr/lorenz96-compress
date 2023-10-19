@@ -283,6 +283,28 @@ int main(int argc, char *argv[])
 
     std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl << std::endl;
 
+    {
+        std::ofstream config_file;
+        std::stringstream file_name;
+        file_name << output << "_config.json";
+        config_file.open(file_name.str(), std::ios::out | std::ios::trunc);
+        
+        config_file << "{ ";
+        config_file << "\"max_time\": " << max_time << ", ";
+        config_file << "\"dt\": " << dt << ", ";
+        config_file << "\"forcing\": " << forcing << ", ";
+        config_file << "\"k\": " << k << ", ";
+        config_file << "\"ensemble_size\": " << ensemble_size << ", ";
+        config_file << "\"output\": \"" << output << "\", ";
+        config_file << "\"seed\": " << seed << ", ";
+        config_file << "\"ensemble_perturbation\": " << ensemble_perturbation_stdv << ", ";
+        config_file << "\"zfp_fixed_rate\": " << zfp_fixed_rate << ", ";
+        config_file << "\"compression_frequency\": " << compression_frequency;
+        config_file << " }" << std::endl;
+        
+        config_file.close();
+    }
+
     int size = k * ensemble_size;
 
     double X_ensemble[size];

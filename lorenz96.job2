@@ -1,0 +1,19 @@
+#!/bin/bash
+
+sbatch <<EOT
+#!/usr/bin/env bash
+
+#SBATCH -p small-g                        # Partition
+#SBATCH --ntasks 1                        # number of cpu
+#SBATCH -t 0-0:10:00                      # wall clock time limit
+#SBATCH --gpus-per-task=1
+#SBATCH --output=output/slurm-%j.out
+
+#SBATCH --account=project_462000376
+#SBATCH --reservation=ESiWACE3_small-g
+
+source modules
+
+./lorenz96 ${@} -o output/state_\${SLURM_JOB_ID}
+
+EOT
