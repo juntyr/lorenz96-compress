@@ -211,6 +211,7 @@ void configure_cli(cli::Parser& parser) {
     parser.set_optional<double>("p", "ensemble-perturbation", 0.001);
     parser.set_optional<double>("r", "zfp-fixed-rate", 64.25);
     parser.set_optional<int>("c", "compression-frequency", -1);
+    parser.set_optional<double>("w", "warmup-time", 0.0);
 }
 
 int main(int argc, char *argv[])
@@ -229,6 +230,7 @@ int main(int argc, char *argv[])
     double ensemble_perturbation_stdv = parser.get<double>("p");
     double zfp_fixed_rate = parser.get<double>("r");
     int compression_frequency = parser.get<int>("c");
+    double warmup_time = parser.get<double>("w");
 
     if (dt <= 0.0) {
         std::cout << "dt must be a positive number" << std::endl;
@@ -270,7 +272,15 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    if (warmup_time < 0.0) {
+        std::cout << "warmup time must be non-negative" << std::endl;
+        return 1;
+    }
+
     std::cout << "Lorenz96(k=" << k << ", F=" << forcing << ", dt=" << dt << ", t_max=" << max_time << ")" << std::endl;
+    if (warmup_time > 0.0) {
+        std::cout << " - warming up the simulation for " << warmup_time << std::endl;
+    }
     std::cout << " - running ensemble of size " << ensemble_size << " with initial perturbation N(0.0, " << ensemble_perturbation_stdv << ")" << std::endl;
 
     if (compression_frequency < 0) {
@@ -299,7 +309,8 @@ int main(int argc, char *argv[])
         config_file << "\"seed\": " << seed << ", ";
         config_file << "\"ensemble_perturbation\": " << ensemble_perturbation_stdv << ", ";
         config_file << "\"zfp_fixed_rate\": " << zfp_fixed_rate << ", ";
-        config_file << "\"compression_frequency\": " << compression_frequency;
+        config_file << "\"compression_frequency\": " << compression_frequency << ", ";
+        config_file << "\"warmup_time\": " << warmup_time;
         config_file << " }" << std::endl;
         
         config_file.close();
@@ -316,11 +327,29 @@ int main(int argc, char *argv[])
     HIP_ERRCHK(hipMalloc(&X_compressed_gpu, k * sizeof(double) * 2));
 
     // Initialise the initial state
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < k; i++) {
         X_ensemble[i] = 0.0;
     }
-    for (int i = 0; i < ensemble_size; i++) {
-        X_ensemble[k*i] = 1.0;
+    X_ensemble[0] = 1.0;
+
+    auto time_step_warm = RungeKutta(k, 1);
+    double t_warm = 0.0;
+
+    if (warmup_time > 0.0) {
+        HIP_ERRCHK(hipMemcpy(X_ensemble_gpu, X_ensemble, sizeof(double) * k, hipMemcpyHostToDevice));
+
+        while ((t_warm += dt) <= warmup_time) {
+            time_step_warm.time_step(X_ensemble_gpu, dt, forcing);
+        }
+
+        HIP_ERRCHK(hipMemcpy(X_ensemble, X_ensemble_gpu, sizeof(double) * k, hipMemcpyDeviceToHost));
+    }
+
+    // Copy the initial state to the other ensemble members
+    for (int i = 1; i < ensemble_size; i++) {
+        for (int j = 0; j < k; j++) {
+            X_ensemble[k*i + j] = X_ensemble[j];
+        }
     }
 
     std::mt19937 rng;
