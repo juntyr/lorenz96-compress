@@ -5,7 +5,7 @@
 
 // target = 1 // CPU
 // target = 2 // GPU
-int compress ( double * data, int nx, void * compressed, double rate, int target) {
+int compress ( const double* const data, const int nx, char* const compressed, const double rate, const int target) {
 
   int status = 0;
   zfp_field* field;  /* array meta data */
@@ -31,7 +31,7 @@ int compress ( double * data, int nx, void * compressed, double rate, int target
   }
 
   type = zfp_type_double;
-  field = zfp_field_1d(data, type, nx);
+  field = zfp_field_1d(const_cast<void*>(static_cast<const void*>(data)), type, nx);
 
   zfp = zfp_stream_open(NULL);
   zfp_stream_set_rate(zfp, rate, type, zfp_field_dimensionality(field), zfp_false);

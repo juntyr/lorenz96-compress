@@ -5,7 +5,7 @@
 
 // target = 1 // CPU
 // target = 2 // GPU
-int decompress ( double * data, int nx, void * compressed, double rate, int target) {
+int decompress ( double* const data, const int nx, const char* const compressed, const double rate, const int target) {
 
   int status = 0;
   zfp_field* field;  /* array meta data */
@@ -31,7 +31,7 @@ int decompress ( double * data, int nx, void * compressed, double rate, int targ
   }
 
   type = zfp_type_double;
-  field = zfp_field_1d(data, type, nx);
+  field = zfp_field_1d(static_cast<void*>(data), type, nx);
 
   zfp = zfp_stream_open(NULL);
   zfp_stream_set_rate(zfp, rate, type, zfp_field_dimensionality(field), zfp_false);
@@ -45,7 +45,7 @@ int decompress ( double * data, int nx, void * compressed, double rate, int targ
   //zfp_stream_set_params(zfp, minbits, bufsize, maxprec, minexp);
 
   /* associate bit stream with allocated buffer */
-  stream = stream_open(compressed, bufsize);
+  stream = stream_open(const_cast<void*>(static_cast<const void*>(compressed)), bufsize);
   zfp_stream_set_bit_stream(zfp, stream);
   zfp_stream_rewind(zfp);
   //zfp_stream_set_execution(zfp, exec_policy);
