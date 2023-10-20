@@ -25,8 +25,8 @@ __global__ void lorenz96_tendency(const double forcing, const double* const X_en
     int ensemble_id = blockIdx.x;
     int ensemble_size = gridDim.x;
     
-    const double* const X = X_ensemble + ensemble_id * k_max;
-    double* const dXdt = dXdt_ensemble + ensemble_id * k_max;
+    const double* const X = &X_ensemble[ensemble_id * k_max];
+    double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
 
     int k_m2 = (k-2 + k_max) % k_max;
     int k_m1 = (k-1 + k_max) % k_max;
@@ -42,8 +42,8 @@ __global__ void lorenz96_timestep_direct(const double dt, double* const X_ensemb
     int ensemble_id = blockIdx.x;
     int ensemble_size = gridDim.x;
 
-    double* const X = X_ensemble + ensemble_id * k_max;
-    const double* const dXdt = dXdt_ensemble + ensemble_id * k_max;
+    double* const X = &X_ensemble[ensemble_id * k_max];
+    const double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
 
     X[k] += dXdt[k] * dt;
 }
@@ -55,9 +55,9 @@ __global__ void lorenz96_timestep_euler_smoothing(double* const Xp0_ensemble, co
     int ensemble_id = blockIdx.x;
     int ensemble_size = gridDim.x;
 
-    double* const Xp1 = Xp0_ensemble + ensemble_id * k_max;
-    const double* const Xp0 = Xp0_ensemble + ensemble_id * k_max;
-    const double* const Xp2 = Xp2_ensemble + ensemble_id * k_max;
+    double* const Xp1 = &Xp0_ensemble[ensemble_id * k_max];
+    const double* const Xp0 = &Xp0_ensemble[ensemble_id * k_max];
+    const double* const Xp2 = &Xp2_ensemble[ensemble_id * k_max];
 
     Xp1[k] = (Xp0[k] + Xp2[k]) * 0.5;
 }
@@ -69,11 +69,11 @@ __global__ void lorenz96_timestep_runge_kutta(double* const dXdt_ensemble, const
     int ensemble_id = blockIdx.x;
     int ensemble_size = gridDim.x;
 
-    double* const dXdt = dXdt_ensemble + ensemble_id * k_max;
-    const double* const k1 = k1_ensemble + ensemble_id * k_max;
-    const double* const k2 = k2_ensemble + ensemble_id * k_max;
-    const double* const k3 = k3_ensemble + ensemble_id * k_max;
-    const double* const k4 = k4_ensemble + ensemble_id * k_max;
+    double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
+    const double* const k1 = &k1_ensemble[ensemble_id * k_max];
+    const double* const k2 = &k2_ensemble[ensemble_id * k_max];
+    const double* const k3 = &k3_ensemble[ensemble_id * k_max];
+    const double* const k4 = &k4_ensemble[ensemble_id * k_max];
 
     dXdt[k] = (k1[k] + k2[k]*2.0 + k3[k]*2.0 + k4[k]) / 6.0;
 }
@@ -90,8 +90,8 @@ __global__ void compress_bitround(const uint64_t mask, const double* const X_ens
     int ensemble_id = blockIdx.x;
     int ensemble_size = gridDim.x;
 
-    const double* const X = X_ensemble + ensemble_id * k_max;
-    double* const X_compressed = X_compressed_ensemble + ensemble_id * k_max;
+    const double* const X = &X_ensemble[ensemble_id * k_max];
+    double* const X_compressed = &X_compressed_ensemble[ensemble_id * k_max];
 
     X_compressed[k] = Binary { .u = Binary { .f = X[k] }.u & mask }.f; 
 }
@@ -264,7 +264,8 @@ struct Zfp: Compressor {
         int decompressed_bytes_total = 0;
 
         for (int i = 0; i < ensemble_size; i++) {
-            int decompressed_bytes = decompress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[decompressed_bytes_total], this->fixed_rate, 1);
+            //int decompressed_bytes = decompress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[decompressed_bytes_total], this->fixed_rate, 1);
+            int decompressed_bytes = decompress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[i*this->k*sizeof(double)*2], this->fixed_rate, 1);
             if (decompressed_bytes <= 0) {
                 std::cout << "ZFP CPU decompression failed" << std::endl;
                 return 0;
@@ -279,7 +280,8 @@ struct Zfp: Compressor {
         int decompressed_bytes_total = 0;
 
         for (int i = 0; i < ensemble_size; i++) {
-            int decompressed_bytes = decompress(&X_ensemble_gpu[i*this->k], this->k, &X_compressed_ensemble_gpu[decompressed_bytes_total], this->fixed_rate, 2);
+            //int decompressed_bytes = decompress(&X_ensemble_gpu[i*this->k], this->k, &X_compressed_ensemble_gpu[decompressed_bytes_total], this->fixed_rate, 2);
+            int decompressed_bytes = decompress(&X_ensemble_gpu[i*this->k], this->k, &X_compressed_ensemble_gpu[i*this->k*sizeof(double)*2], this->fixed_rate, 2);
             if (decompressed_bytes <= 0) {
                 std::cout << "ZFP GPU decompression failed" << std::endl;
                 return 0;
@@ -294,7 +296,7 @@ struct Zfp: Compressor {
 };
 
 struct BitRound: Compressor {
-    BitRound(const int k, const int ensemble_size, const int bits): Compressor(k, ensemble_size), mask(0xFFF0000000000000ULL | ((1ULL << bits) - 1)) {
+    BitRound(const int k, const int ensemble_size, const int bits): Compressor(k, ensemble_size), mask(~((1ULL << (52 - bits)) - 1)) {
 
     }
 
@@ -461,11 +463,21 @@ int main(int argc, char *argv[])
     if (compression_frequency < 0) {
         std::cout << " - without compression" << std::endl;
     } else if (compression_frequency == 0) {
-        std::cout << " - compressing every output on the CPU with ZFP(fixed_rate=" << zfp_fixed_rate << ")" << std::endl;
+        std::cout << " - compressing every output on the CPU with ";
     } else {
-        std::cout << " - compressing every " << compression_frequency << "-th model state online on the GPU with ZFP(fixed_rate=" << zfp_fixed_rate << ")" << std::endl;
+        std::cout << " - compressing every " << compression_frequency << "-th model state online on the GPU with ";
     }
 
+    if (compression_frequency >= 0) {
+        if (compression_algorithm == "zfp") {
+            std::cout << "ZFP(fixed_rate=" << zfp_fixed_rate << ")";
+        } else if (compression_algorithm == "bitround") {
+            std::cout << "BitRound(bitround_bits=" << bitround_bits << ")";
+        }
+
+        std::cout << std::endl;
+    }
+    
     std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl << std::endl;
 
     {
@@ -485,7 +497,9 @@ int main(int argc, char *argv[])
         config_file << "\"ensemble_perturbation\": " << ensemble_perturbation_stdv << ", ";
         config_file << "\"zfp_fixed_rate\": " << zfp_fixed_rate << ", ";
         config_file << "\"compression_frequency\": " << compression_frequency << ", ";
-        config_file << "\"warmup_time\": " << warmup_time;
+        config_file << "\"warmup_time\": " << warmup_time << ", ";
+        config_file << "\"bitround_bits\": " << bitround_bits << ", ";
+        config_file << "\"compression_algorithm\": \"" << compression_algorithm << "\"";
         config_file << " }" << std::endl;
         
         config_file.close();
@@ -494,12 +508,12 @@ int main(int argc, char *argv[])
     int size = k * ensemble_size;
 
     double X_ensemble[size];
-    char X_compressed[k * ensemble_size * sizeof(double) * 2];
+    char X_compressed[sizeof(double) * size * 2];
     double *X_ensemble_gpu;
     char *X_compressed_gpu;
 
     HIP_ERRCHK(hipMalloc(&X_ensemble_gpu, sizeof(double) * size));
-    HIP_ERRCHK(hipMalloc(&X_compressed_gpu, k * ensemble_size * sizeof(double) * 2));
+    HIP_ERRCHK(hipMalloc(&X_compressed_gpu, sizeof(double) * size * 2));
 
     Compressor *compressor;
 
@@ -643,6 +657,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < ensemble_size; i++) {
         out_files[i].close();
     }
+
+    delete compressor;
 
     HIP_ERRCHK(hipFree(X_ensemble_gpu));
     HIP_ERRCHK(hipFree(X_compressed_gpu));
