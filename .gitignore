@@ -1,7 +1,7 @@
 /lorenz96
+/lorenz_perf
 /*.out
 /*.swp
 /state_*
 /core
-/output
 /.ipynb_checkpoints

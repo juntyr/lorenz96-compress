@@ -4,6 +4,7 @@
 #include <random>
 #include <cstdint>
 #include <hip/hip_runtime.h>
+#include <chrono>
 
 #include "cmdparser.hpp"
 #include "compress.hpp"
@@ -363,6 +364,7 @@ void configure_cli(cli::Parser& parser) {
     parser.set_optional<int>("k", "", 36);
     parser.set_optional<int>("e", "ensemble-size", 11);
     parser.set_optional<std::string>("o", "output", "state");
+    parser.set_optional<std::string>("m", "performance", "performance");
     parser.set_optional<int>("s", "seed", 42);
     parser.set_optional<double>("p", "ensemble-perturbation", 0.001);
     parser.set_optional<double>("r", "zfp-fixed-rate", 64.25);
@@ -384,6 +386,7 @@ int main(int argc, char *argv[])
     int k = parser.get<int>("k");
     int ensemble_size = parser.get<int>("e");
     std::string output = parser.get<std::string>("o");
+    std::string performance = parser.get<std::string>("m");
     int seed = parser.get<int>("s");
     double ensemble_perturbation_stdv = parser.get<double>("p");
     double zfp_fixed_rate = parser.get<double>("r");
@@ -491,6 +494,7 @@ int main(int argc, char *argv[])
         config_file << "\"k\": " << k << ", ";
         config_file << "\"ensemble_size\": " << ensemble_size << ", ";
         config_file << "\"output\": \"" << output << "\", ";
+        config_file << "\"performance\": \"" << performance << "\", ";
         config_file << "\"seed\": " << seed << ", ";
         config_file << "\"ensemble_perturbation\": " << ensemble_perturbation_stdv << ", ";
         config_file << "\"zfp_fixed_rate\": " << zfp_fixed_rate << ", ";
@@ -603,6 +607,16 @@ int main(int argc, char *argv[])
         }
     }
 
+    // HIP events has to be initialized using hipEventCreate
+    hipEvent_t start_gpu, stop_gpu;
+    HIP_ERRCHK(hipEventCreate(&start_gpu));
+    HIP_ERRCHK(hipEventCreate(&stop_gpu));
+    std::chrono::high_resolution_clock::time_point start_cpu, stop_cpu;
+    float elapsed_ms{};
+
+    std::ofstream performance_file;
+    performance_file.open(performance, std::ios::out | std::ios::trunc);
+
     dim3 blocks(ensemble_size);
     dim3 threads(k);
 
@@ -617,27 +631,79 @@ int main(int argc, char *argv[])
         time_step.time_step(X_ensemble_gpu, dt, forcing);
 
         if ((compression_frequency > 0) && ((step % compression_frequency) == 0)) {
-            if (compressor->compress_gpu(X_ensemble_gpu, X_compressed_gpu) == 0) {
+            HIP_ERRCHK(hipEventRecord(start_gpu, hipStreamDefault));
+            int compressed_bytes = compressor->compress_gpu(X_ensemble_gpu, X_compressed_gpu);
+            HIP_ERRCHK(hipEventRecord(stop_gpu, hipStreamDefault));
+            HIP_ERRCHK(hipEventSynchronize(stop_gpu));
+
+            if (compressed_bytes == 0) {
                 std::cout << compression_algorithm << " GPU compression failed" << std::endl;
                 return 1;
             }
-            if (compressor->decompress_gpu(X_ensemble_gpu, X_compressed_gpu) == 0) {
+
+            // Calculate and print the elapsed time to compress on the GPU
+            HIP_ERRCHK(hipEventElapsedTime(&elapsed_ms, start_gpu, stop_gpu));
+            performance_file << "compress = " << elapsed_ms << " ms" << std::endl;
+
+            HIP_ERRCHK(hipEventRecord(start_gpu, hipStreamDefault));
+            HIP_ERRCHK(hipMemcpy(X_compressed, X_compressed_gpu, compressed_bytes, hipMemcpyDeviceToHost));
+            HIP_ERRCHK(hipEventRecord(stop_gpu, hipStreamDefault));
+            HIP_ERRCHK(hipEventSynchronize(stop_gpu));
+
+            // Calculate and print the elapsed time to transfer compressed data from the GPU to the CPU
+            HIP_ERRCHK(hipEventElapsedTime(&elapsed_ms, start_gpu, stop_gpu));
+            performance_file << "transfer_compressed = " << elapsed_ms << " ms" << " bytes = " << compressed_bytes << std::endl;
+
+            HIP_ERRCHK(hipEventRecord(start_gpu, hipStreamDefault));
+            int decompressed_bytes = compressor->decompress_gpu(X_ensemble_gpu, X_compressed_gpu);
+            HIP_ERRCHK(hipEventRecord(stop_gpu, hipStreamDefault));
+            HIP_ERRCHK(hipEventSynchronize(stop_gpu));
+
+            if (decompressed_bytes == 0) {
                 std::cout << compression_algorithm << " GPU decompression failed" << std::endl;
                 return 1;
             }
+
+            // Calculate and print the elapsed time to decompress on the GPU
+            HIP_ERRCHK(hipEventElapsedTime(&elapsed_ms, start_gpu, stop_gpu));
+            performance_file << "decompress = " << elapsed_ms << " ms" << std::endl;
         }
 
+        HIP_ERRCHK(hipEventRecord(start_gpu, hipStreamDefault));
         HIP_ERRCHK(hipMemcpy(X_ensemble, X_ensemble_gpu, sizeof(double) * size, hipMemcpyDeviceToHost));
+        HIP_ERRCHK(hipEventRecord(stop_gpu, hipStreamDefault));
+        HIP_ERRCHK(hipEventSynchronize(stop_gpu));
+
+        // Calculate and print the elapsed time to transfer uncompressed data from the GPU to the CPU
+        HIP_ERRCHK(hipEventElapsedTime(&elapsed_ms, start_gpu, stop_gpu));
+        performance_file << "transfer_uncompressed = " << elapsed_ms << " ms" << " bytes = " << sizeof(double) * size << std::endl;
 
         if (compression_frequency == 0) {
-            if (compressor->compress_cpu(X_ensemble, X_compressed) == 0) {
+            start_cpu = std::chrono::high_resolution_clock::now();
+            int compressed_bytes = compressor->compress_cpu(X_ensemble, X_compressed);
+            stop_cpu = std::chrono::high_resolution_clock::now();
+
+            if (compressed_bytes == 0) {
                 std::cout << compression_algorithm << " CPU compression failed" << std::endl;
                 return 1;
             }
-            if (compressor->decompress_cpu(X_ensemble, X_compressed) == 0) {
+
+            // Calculate and print the elapsed time to compress on the CPU
+            elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_cpu - start_cpu).count() / 1000000.0;
+            performance_file << "compress = " << elapsed_ms << " ms" << std::endl;
+
+            start_cpu = std::chrono::high_resolution_clock::now();
+            int decompressed_bytes = compressor->decompress_cpu(X_ensemble, X_compressed);
+            stop_cpu = std::chrono::high_resolution_clock::now();
+
+            if (decompressed_bytes == 0) {
                 std::cout << compression_algorithm << " CPU decompression failed" << std::endl;
                 return 1;
             }
+
+            // Calculate and print the elapsed time to decompress on the CPU
+            elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_cpu - start_cpu).count() / 1000000.0;
+            performance_file << "decompress = " << elapsed_ms << " ms" << std::endl;
         }
 
         if ((t + dt) > max_time) {
@@ -655,6 +721,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < ensemble_size; i++) {
         out_files[i].close();
     }
+
+    performance_file.close();
 
     delete compressor;
 
