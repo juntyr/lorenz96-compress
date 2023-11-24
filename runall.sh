@@ -3,6 +3,7 @@ do
     for r in 8 12 16 24 32 48 64
     do
         ./lorenz96.job -w 10 -t 6 -r $r -e 11 -a zfp -c $c --dt 0.003
+        sleep 15
     done
 done
 
@@ -11,5 +12,6 @@ do
     for b in 8 12 16 24 32 48 52
     do
         ./lorenz96.job -w 10 -t 6 -b $b -e 11 -a bitround -c $c --dt 0.003
+        sleep 15
     done
 done
