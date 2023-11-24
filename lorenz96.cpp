@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <sstream> 
+#include <sstream>
 #include <random>
 #include <cstdint>
 #include <hip/hip_runtime.h>
@@ -24,7 +24,7 @@ __global__ void lorenz96_tendency(const double forcing, const double* const X_en
 
     int ensemble_id = blockIdx.x;
     int ensemble_size = gridDim.x;
-    
+
     const double* const X = &X_ensemble[ensemble_id * k_max];
     double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
 
@@ -93,7 +93,7 @@ __global__ void compress_bitround(const uint64_t mask, const double* const X_ens
     const double* const X = &X_ensemble[ensemble_id * k_max];
     double* const X_compressed = &X_compressed_ensemble[ensemble_id * k_max];
 
-    X_compressed[k] = Binary { .u = Binary { .f = X[k] }.u & mask }.f; 
+    X_compressed[k] = Binary { .u = Binary { .f = X[k] }.u & mask }.f;
 }
 
 struct TimeStep {
@@ -231,7 +231,7 @@ struct Zfp: Compressor {
     }
 
     int compress_cpu(const double* const X_ensemble, char* const X_compressed_ensemble) {
-        int compressed_bytes_total = 0;        
+        int compressed_bytes_total = 0;
 
         for (int i = 0; i < ensemble_size; i++) {
             int compressed_bytes = compress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[compressed_bytes_total], this->fixed_rate, 1);
@@ -264,8 +264,7 @@ struct Zfp: Compressor {
         int decompressed_bytes_total = 0;
 
         for (int i = 0; i < ensemble_size; i++) {
-            //int decompressed_bytes = decompress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[decompressed_bytes_total], this->fixed_rate, 1);
-            int decompressed_bytes = decompress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[i*this->k*sizeof(double)*2], this->fixed_rate, 1);
+            int decompressed_bytes = decompress(&X_ensemble[i*this->k], this->k, &X_compressed_ensemble[decompressed_bytes_total], this->fixed_rate, 1);
             if (decompressed_bytes <= 0) {
                 std::cout << "ZFP CPU decompression failed" << std::endl;
                 return 0;
@@ -280,8 +279,7 @@ struct Zfp: Compressor {
         int decompressed_bytes_total = 0;
 
         for (int i = 0; i < ensemble_size; i++) {
-            //int decompressed_bytes = decompress(&X_ensemble_gpu[i*this->k], this->k, &X_compressed_ensemble_gpu[decompressed_bytes_total], this->fixed_rate, 2);
-            int decompressed_bytes = decompress(&X_ensemble_gpu[i*this->k], this->k, &X_compressed_ensemble_gpu[i*this->k*sizeof(double)*2], this->fixed_rate, 2);
+            int decompressed_bytes = decompress(&X_ensemble_gpu[i*this->k], this->k, &X_compressed_ensemble_gpu[decompressed_bytes_total], this->fixed_rate, 2);
             if (decompressed_bytes <= 0) {
                 std::cout << "ZFP GPU decompression failed" << std::endl;
                 return 0;
@@ -379,7 +377,7 @@ int main(int argc, char *argv[])
     cli::Parser parser(argc, argv);
     configure_cli(parser);
     parser.run_and_exit_if_error();
-    
+
     double max_time = parser.get<double>("t");
     double dt = parser.get<double>("d");
     double forcing = parser.get<double>("f");
@@ -477,7 +475,7 @@ int main(int argc, char *argv[])
 
         std::cout << std::endl;
     }
-    
+
     std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl << std::endl;
 
     {
@@ -485,7 +483,7 @@ int main(int argc, char *argv[])
         std::stringstream file_name;
         file_name << output << "_config.json";
         config_file.open(file_name.str(), std::ios::out | std::ios::trunc);
-        
+
         config_file << "{ ";
         config_file << "\"max_time\": " << max_time << ", ";
         config_file << "\"dt\": " << dt << ", ";
@@ -501,7 +499,7 @@ int main(int argc, char *argv[])
         config_file << "\"bitround_bits\": " << bitround_bits << ", ";
         config_file << "\"compression_algorithm\": \"" << compression_algorithm << "\"";
         config_file << " }" << std::endl;
-        
+
         config_file.close();
     }
 
@@ -620,11 +618,11 @@ int main(int argc, char *argv[])
 
         if ((compression_frequency > 0) && ((step % compression_frequency) == 0)) {
             if (compressor->compress_gpu(X_ensemble_gpu, X_compressed_gpu) == 0) {
-                std::cout << compression_algorithm << " compression failed" << std::endl;
+                std::cout << compression_algorithm << " GPU compression failed" << std::endl;
                 return 1;
             }
-            if (compressor->decompress_cpu(X_ensemble_gpu, X_compressed_gpu) == 0) {
-                std::cout << compression_algorithm << " decompression failed" << std::endl;
+            if (compressor->decompress_gpu(X_ensemble_gpu, X_compressed_gpu) == 0) {
+                std::cout << compression_algorithm << " GPU decompression failed" << std::endl;
                 return 1;
             }
         }
@@ -633,11 +631,11 @@ int main(int argc, char *argv[])
 
         if (compression_frequency == 0) {
             if (compressor->compress_cpu(X_ensemble, X_compressed) == 0) {
-                std::cout << compression_algorithm << " compression failed" << std::endl;
+                std::cout << compression_algorithm << " CPU compression failed" << std::endl;
                 return 1;
             }
             if (compressor->decompress_cpu(X_ensemble, X_compressed) == 0) {
-                std::cout << compression_algorithm << " decompression failed" << std::endl;
+                std::cout << compression_algorithm << " CPU decompression failed" << std::endl;
                 return 1;
             }
         }
