@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -348,11 +349,14 @@ void print_state(const double* const X, const int k, const double t)
 {
     std::cout << "X at t=" << t << ":" << std::endl;
     std::cout << "[ ";
-    for (int i = 0; i < k; i++) {
+    for (int i = 0; i < std::min(k, 36); i++) {
         std::cout << X[i];
         if (i != k - 1) {
             std::cout << ", ";
         }
+    }
+    if (k > 36) {
+        std::cout << "...";
     }
     std::cout << " ]" << std::endl;
 }
