@@ -66,7 +66,7 @@ This sections details the process to compile ZFP on LUMI-G. Note that the Makefi
 
 ## License
 
-Licensed under either of
+Unless specified otherwise below, this repository is licensed under either of
 
  * Apache License, Version 2.0
    ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
@@ -75,9 +75,14 @@ Licensed under either of
 
 at your option.
 
+---
+
+- The [`zfp/`](https://github.com/LLNL/zfp/tree/e935a81d716a9e1d464ed214ed3c1c28157259ec) submodule, is licensed under the BSD 3-Clause license ([`zfp/LICENSE`](https://github.com/LLNL/zfp/blob/e935a81d716a9e1d464ed214ed3c1c28157259ec/LICENSE) and [`zfp/NOTICE`](https://github.com/LLNL/zfp/blob/e935a81d716a9e1d464ed214ed3c1c28157259ec/NOTICE)).
+- The [`cmdparser.hpp`](cmdparser.hpp) file, which is part of Florian Rappl's [C++ CmdParser utility](https://github.com/FlorianRappl/CmdParser), is licensed under the MIT license ([`FlorianRappl/CmdParser/LICENSE`](https://github.com/FlorianRappl/CmdParser/blob/master/LICENSE)).
+
 ## Citation
 
-Please cite the authors of this project and this repository.
+Please refer to the [CITATION.cff](CITATION.cff) file and refer to https://citation-file-format.github.io to extract the citation in a format of your choice.
 
 ## Funding
 
