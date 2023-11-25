@@ -1,0 +1,8 @@
+CRPS==2.0.4
+jupyterlab==3.2.9
+matplotlib==3.3.4
+nbconvert==6.0.7
+numpy==1.19.5
+papermill==2.3.4
+proplot==0.9.7
+six==1.14.0
