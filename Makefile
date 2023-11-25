@@ -1,6 +1,6 @@
 .PHONY: clean purge
 
-all: lorenz96 lorenz_perf
+all: lorenz96
 
 zfp/Makefile:
 	git submodule init
@@ -16,13 +16,9 @@ zfp/build/lib64/libzfp.so: zfp/Makefile
 lorenz96: lorenz96.cpp compress.hpp decompress.hpp zfp/build/lib64/libzfp.so
 	CC -xhip -o lorenz96 lorenz96.cpp --offload-arch=gfx90a -Izfp/include -Lzfp/build/lib64 -lzfp -Wl,-rpath,zfp/build/lib64
 
-lorenz_perf: lorenz_perf.cpp compress.hpp decompress.hpp zfp/build/lib64/libzfp.so
-	CC -xhip -o lorenz_perf lorenz_perf.cpp --offload-arch=gfx90a -Izfp/include -Lzfp/build/lib64 -lzfp -Wl,-rpath,zfp/build/lib64
-
 clean:
 	rm -f *.o
 	rm -f lorenz96
-	rm -f lorenz_perf
 
 purge: clean
 	rm -f *.out

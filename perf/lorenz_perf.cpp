@@ -1,1 +1,0 @@
-../lorenz_perf.cpp
