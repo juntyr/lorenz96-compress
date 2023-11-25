@@ -3,7 +3,7 @@
 
 cff-version: 1.2.0
 title: Lorenz96 Online Compression
-message: Output of the ESiWACE hackation at CSC
+message: Results from the ESiWACE hackathon at CSC
 type: software
 authors:
   - given-names: Juniper
@@ -19,9 +19,9 @@ authors:
 repository-code: 'https://github.com/juntyr/lorenz96-compress/'
 abstract: >
   An assortment of software to run and analyze assembly runs
-  of Lorentz96 on HIP machines with online ZFP compression. 
+  of the Lorenz96 model with lossy online compression on LUMI-G. 
 keywords:
-  - Lorentz96
+  - Lorenz96
   - ZFP
-  - online compression
-license: Apache-2.0
+  - lossy compression
+license: MIT OR Apache-2.0
