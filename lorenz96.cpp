@@ -373,6 +373,7 @@ void configure_cli(cli::Parser& parser) {
     parser.set_optional<double>("f", "forcing", 8.0);
     parser.set_optional<int>("k", "", 36);
     parser.set_optional<int>("e", "ensemble-size", 11);
+    parser.set_optional<std::string>("j", "config", "config.json");
     parser.set_optional<std::string>("o", "output", "state");
     parser.set_optional<std::string>("m", "performance", "performance");
     parser.set_optional<int>("s", "seed", 42);
@@ -395,6 +396,7 @@ int main(int argc, char *argv[])
     double forcing = parser.get<double>("f");
     int k = parser.get<int>("k");
     int ensemble_size = parser.get<int>("e");
+    std::string config = parser.get<std::string>("j");
     std::string output = parser.get<std::string>("o");
     std::string performance = parser.get<std::string>("m");
     int seed = parser.get<int>("s");
@@ -489,13 +491,23 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
     }
 
-    std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl << std::endl;
+    if (config != "/dev/null") {
+        std::cout << " - saving config file to '" << config << "'" << std::endl;
+    }
+
+    if (output != "/dev/null") {
+        std::cout << " - saving output files to '" << output << "_[i]' for i in 0.." << ensemble_size << std::endl;
+    }
+
+    if (performance != "/dev/null") {
+        std::cout << " - saving performance file to '" << performance << "'" << std::endl;
+    }
+
+    std::cout << std::endl;
 
     {
         std::ofstream config_file;
-        std::stringstream file_name;
-        file_name << output << "_config.json";
-        config_file.open(file_name.str(), std::ios::out | std::ios::trunc);
+        config_file.open(config, std::ios::out | std::ios::trunc);
 
         config_file << "{ ";
         config_file << "\"max_time\": " << max_time << ", ";
@@ -503,6 +515,7 @@ int main(int argc, char *argv[])
         config_file << "\"forcing\": " << forcing << ", ";
         config_file << "\"k\": " << k << ", ";
         config_file << "\"ensemble_size\": " << ensemble_size << ", ";
+        config_file << "\"config\": \"" << config << "\", ";
         config_file << "\"output\": \"" << output << "\", ";
         config_file << "\"performance\": \"" << performance << "\", ";
         config_file << "\"seed\": " << seed << ", ";
@@ -592,7 +605,8 @@ int main(int argc, char *argv[])
     std::ofstream out_files[ensemble_size];
     for (int i = 0; i < ensemble_size; i++) {
         std::stringstream file_name;
-        file_name << output << "_" << i;
+        file_name << output;
+        if (output != "/dev/null") file_name << "_" << i;
         out_files[i].open(file_name.str(), std::ios::out | std::ios::trunc | std::ios::binary);
     }
 

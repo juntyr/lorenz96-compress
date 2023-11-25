@@ -14,6 +14,6 @@ sbatch --verbose <<EOT
 
 source modules
 
-./lorenz96 ${@} -o output/state_\${SLURM_JOB_ID} -m performance/perf_\${SLURM_JOB_ID}
+./lorenz96 ${@} -j ${LORENZ96_CONFIG:-output/config_\${SLURM_JOB_ID\}.json} -o ${LORENZ96_OUTPUT:-output/state_\${SLURM_JOB_ID\}} -m ${LORENZ96_PERFORMANCE:-performance/perf_\${SLURM_JOB_ID\}}
 
 EOT
