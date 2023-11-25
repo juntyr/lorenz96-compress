@@ -53,7 +53,7 @@ This sections details the process to compile ZFP on LUMI-G. Note that the Makefi
   ```
 - Second, use `nbconvert` or `papermill` to execute the notebook, e.g.:
   ```bash
-  papermill --autosave-cell-every 5 --progress-bar plot.ipynb plot.nbconvert.ipynb
+  papermill --kernel python3 --autosave-cell-every 5 --progress-bar plot.ipynb plot.nbconvert.ipynb
   ```
 - Optionally, remove execution metadata:
   ```bash

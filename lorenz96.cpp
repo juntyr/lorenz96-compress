@@ -20,12 +20,13 @@ static inline void hip_errchk(hipError_t err, const char *file, int line) {
   }
 }
 
-__global__ void lorenz96_tendency(const double forcing, const double* const X_ensemble, double* const dXdt_ensemble) {
-    int k = threadIdx.x;
-    int k_max = blockDim.x;
+__global__ void lorenz96_tendency(const int k_max, const double forcing, const double* const X_ensemble, double* const dXdt_ensemble) {
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int ensemble_id = blockIdx.x;
-    int ensemble_size = gridDim.x;
+    if (k >= k_max) return;
+
+    int ensemble_id = blockIdx.y;
+    int ensemble_size = gridDim.y;
 
     const double* const X = &X_ensemble[ensemble_id * k_max];
     double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
@@ -37,12 +38,13 @@ __global__ void lorenz96_tendency(const double forcing, const double* const X_en
     dXdt[k] = -X[k_m2]*X[k_m1] + X[k_m1]*X[k_p1] - X[k] + forcing;
 }
 
-__global__ void lorenz96_timestep_direct(const double dt, double* const X_ensemble, const double* const dXdt_ensemble) {
-    int k = threadIdx.x;
-    int k_max = blockDim.x;
+__global__ void lorenz96_timestep_direct(const int k_max, const double dt, double* const X_ensemble, const double* const dXdt_ensemble) {
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int ensemble_id = blockIdx.x;
-    int ensemble_size = gridDim.x;
+    if (k >= k_max) return;
+
+    int ensemble_id = blockIdx.y;
+    int ensemble_size = gridDim.y;
 
     double* const X = &X_ensemble[ensemble_id * k_max];
     const double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
@@ -50,12 +52,13 @@ __global__ void lorenz96_timestep_direct(const double dt, double* const X_ensemb
     X[k] += dXdt[k] * dt;
 }
 
-__global__ void lorenz96_timestep_euler_smoothing(double* const Xp0_ensemble, const double* const Xp2_ensemble) {
-    int k = threadIdx.x;
-    int k_max = blockDim.x;
+__global__ void lorenz96_timestep_euler_smoothing(const int k_max, double* const Xp0_ensemble, const double* const Xp2_ensemble) {
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int ensemble_id = blockIdx.x;
-    int ensemble_size = gridDim.x;
+    if (k >= k_max) return;
+
+    int ensemble_id = blockIdx.y;
+    int ensemble_size = gridDim.y;
 
     double* const Xp1 = &Xp0_ensemble[ensemble_id * k_max];
     const double* const Xp0 = &Xp0_ensemble[ensemble_id * k_max];
@@ -64,12 +67,13 @@ __global__ void lorenz96_timestep_euler_smoothing(double* const Xp0_ensemble, co
     Xp1[k] = (Xp0[k] + Xp2[k]) * 0.5;
 }
 
-__global__ void lorenz96_timestep_runge_kutta(double* const dXdt_ensemble, const double* const k1_ensemble, const double* const k2_ensemble, const double* const k3_ensemble, const double* const k4_ensemble) {
-    int k = threadIdx.x;
-    int k_max = blockDim.x;
+__global__ void lorenz96_timestep_runge_kutta(const int k_max, double* const dXdt_ensemble, const double* const k1_ensemble, const double* const k2_ensemble, const double* const k3_ensemble, const double* const k4_ensemble) {
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int ensemble_id = blockIdx.x;
-    int ensemble_size = gridDim.x;
+    if (k >= k_max) return;
+
+    int ensemble_id = blockIdx.y;
+    int ensemble_size = gridDim.y;
 
     double* const dXdt = &dXdt_ensemble[ensemble_id * k_max];
     const double* const k1 = &k1_ensemble[ensemble_id * k_max];
@@ -80,17 +84,18 @@ __global__ void lorenz96_timestep_runge_kutta(double* const dXdt_ensemble, const
     dXdt[k] = (k1[k] + k2[k]*2.0 + k3[k]*2.0 + k4[k]) / 6.0;
 }
 
-__global__ void compress_bitround(const uint64_t mask, const double* const X_ensemble, double* const X_compressed_ensemble) {
+__global__ void compress_bitround(const int k_max, const uint64_t mask, const double* const X_ensemble, double* const X_compressed_ensemble) {
     union Binary {
         std::uint64_t u;
         double f;
     };
 
-    int k = threadIdx.x;
-    int k_max = blockDim.x;
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int ensemble_id = blockIdx.x;
-    int ensemble_size = gridDim.x;
+    if (k >= k_max) return;
+
+    int ensemble_id = blockIdx.y;
+    int ensemble_size = gridDim.y;
 
     const double* const X = &X_ensemble[ensemble_id * k_max];
     double* const X_compressed = &X_compressed_ensemble[ensemble_id * k_max];
@@ -99,11 +104,12 @@ __global__ void compress_bitround(const uint64_t mask, const double* const X_ens
 }
 
 struct TimeStep {
-    TimeStep(const int k, const int ensemble_size): size(k * ensemble_size), blocks(ensemble_size), threads(k) {}
+    TimeStep(const int k, const int ensemble_size): k(k), size(k * ensemble_size), blocks((k + 255) / 256, ensemble_size), threads(std::min(k, 256)) {}
     virtual ~TimeStep() {}
 
     virtual void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) = 0;
 
+    const int k;
     const int size;
     const dim3 blocks;
     const dim3 threads;
@@ -119,8 +125,8 @@ struct Direct: TimeStep {
     }
 
     void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) {
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, X_ensemble_gpu, this->dXdt_ensemble_gpu);
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, X_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, X_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt, X_ensemble_gpu, this->dXdt_ensemble_gpu);
     }
 
     double* dXdt_ensemble_gpu;
@@ -142,15 +148,15 @@ struct EulerSmoothing: TimeStep {
         HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
 
         // Xtemp = X_(n+1) = X_(n) + X'_(n) * dt
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
 
         // Xtemp = X_(n+2) = X_(n+1) + X'_(n+1) * dt
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt, this->Xtemp_ensemble_gpu, this->dXdt_ensemble_gpu);
 
         // X = X_(n_1) = ( X_(n) + X_(n+2) ) / 2
-        lorenz96_timestep_euler_smoothing<<<this->blocks, this->threads>>>(X_ensemble_gpu, this->Xtemp_ensemble_gpu);
+        lorenz96_timestep_euler_smoothing<<<this->blocks, this->threads>>>(this->k, X_ensemble_gpu, this->Xtemp_ensemble_gpu);
     }
 
     double* dXdt_ensemble_gpu;
@@ -178,26 +184,26 @@ struct RungeKutta: TimeStep {
 
     void time_step(double* const X_ensemble_gpu, const double dt, const double forcing) {
         // k1 = X'(X_n)
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, X_ensemble_gpu, this->k1_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, X_ensemble_gpu, this->k1_ensemble_gpu);
 
         // k2 = X'(X_n + k1 * dt/2)
         HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt * 0.5, this->Xtemp_ensemble_gpu, this->k1_ensemble_gpu);
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->k2_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt * 0.5, this->Xtemp_ensemble_gpu, this->k1_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, this->Xtemp_ensemble_gpu, this->k2_ensemble_gpu);
 
         // k3 = X'(X_n + k2 * dt/2)
         HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt * 0.5, this->Xtemp_ensemble_gpu, this->k2_ensemble_gpu);
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->k3_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt * 0.5, this->Xtemp_ensemble_gpu, this->k2_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, this->Xtemp_ensemble_gpu, this->k3_ensemble_gpu);
 
         // k4 = X'(X_n + k3 * dt)
         HIP_ERRCHK(hipMemcpy(this->Xtemp_ensemble_gpu, X_ensemble_gpu, sizeof(double) * this->size, hipMemcpyDeviceToDevice));
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, this->Xtemp_ensemble_gpu, this->k3_ensemble_gpu);
-        lorenz96_tendency<<<this->blocks, this->threads>>>(forcing, this->Xtemp_ensemble_gpu, this->k4_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt, this->Xtemp_ensemble_gpu, this->k3_ensemble_gpu);
+        lorenz96_tendency<<<this->blocks, this->threads>>>(this->k, forcing, this->Xtemp_ensemble_gpu, this->k4_ensemble_gpu);
 
         // X = X_(n_1) = X_(n) + (k1 + k2*2 + k3*2 + k4) * dt/6
-        lorenz96_timestep_runge_kutta<<<this->blocks, this->threads>>>(this->dXdt_ensemble_gpu, this->k1_ensemble_gpu, this->k2_ensemble_gpu, this->k3_ensemble_gpu, this->k4_ensemble_gpu);
-        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(dt, X_ensemble_gpu, this->dXdt_ensemble_gpu);
+        lorenz96_timestep_runge_kutta<<<this->blocks, this->threads>>>(this->k, this->dXdt_ensemble_gpu, this->k1_ensemble_gpu, this->k2_ensemble_gpu, this->k3_ensemble_gpu, this->k4_ensemble_gpu);
+        lorenz96_timestep_direct<<<this->blocks, this->threads>>>(this->k, dt, X_ensemble_gpu, this->dXdt_ensemble_gpu);
     }
 
     double* dXdt_ensemble_gpu;
@@ -320,12 +326,12 @@ struct BitRound: Compressor {
     }
 
     int compress_gpu(const double* const X_ensemble_gpu, char* const X_compressed_ensemble_gpu) {
-        dim3 blocks(this->ensemble_size);
-        dim3 threads(this->k);
+        dim3 blocks((this->k + 255) / 256, this->ensemble_size);
+        dim3 threads(std::min(this->k, 256));
 
         double* const X_compressed_ensemble_gpu_f = reinterpret_cast<double*>(X_compressed_ensemble_gpu);
 
-        compress_bitround<<<blocks, threads>>>(this->mask, X_ensemble_gpu, X_compressed_ensemble_gpu_f);
+        compress_bitround<<<blocks, threads>>>(this->k, this->mask, X_ensemble_gpu, X_compressed_ensemble_gpu_f);
 
         return this->size * sizeof(double);
     }
@@ -620,9 +626,6 @@ int main(int argc, char *argv[])
 
     std::ofstream performance_file;
     performance_file.open(performance, std::ios::out | std::ios::trunc);
-
-    dim3 blocks(ensemble_size);
-    dim3 threads(k);
 
     auto time_step = RungeKutta(k, ensemble_size);
 
