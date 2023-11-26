@@ -16,12 +16,22 @@ authors:
     email: v.azizi@esciencecenter.nl
     affiliation: Netherlands eScience Center
     orcid: 'https://orcid.org/0000-0003-3535-8320'
+identifiers:
+  - type: url
+    value: >-
+      https://github.com/juntyr/lorenz96-compress/releases/tag/v1.0.0
+    description: The GitHub Release
 repository-code: 'https://github.com/juntyr/lorenz96-compress/'
 abstract: >
   An assortment of software to run and analyze assembly runs
-  of the Lorenz96 model with lossy online compression on LUMI-G. 
+  of the Lorenz96 model with lossy online compression on
+  LUMI-G.
 keywords:
   - Lorenz96
-  - ZFP
   - lossy compression
-license: MIT OR Apache-2.0
+  - ESiWACE3
+  - ZFP
+license: Apache-2.0
+commit: v1.0.0
+version: 1.0.0
+date-released: '2023-11-26'

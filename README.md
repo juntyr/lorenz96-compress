@@ -1,4 +1,4 @@
-# Exploring online compression the Lorenz96 model
+# Exploring online compression with the Lorenz96 model
 
 This project was developed during the ESiWACE3 hackathon at CSC Finland on 18.10. - 20.10.2023 by Victor Azizi from the Netherlands eScience Center and Juniper Tyree from the University of Helsinki.
 
