@@ -1,4 +1,8 @@
-# Exploring online compression with the Lorenz96 model
+# Exploring online compression with the Lorenz96 model &emsp; [![DOI]][doi-url]
+- - - -
+
+[DOI]: https://zenodo.org/badge/DOI/10.5281/zenodo.10207094.svg
+[doi-url]: https://doi.org/10.5281/zenodo.10207094
 
 This project was developed during the ESiWACE3 hackathon at CSC Finland on 18.10. - 20.10.2023 by Victor Azizi from the Netherlands eScience Center and Juniper Tyree from the University of Helsinki.
 
