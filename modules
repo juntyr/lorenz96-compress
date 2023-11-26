@@ -3,3 +3,4 @@ module load craype-accel-amd-gfx90a
 module load rocm
 module load LUMI
 module load buildtools
+module load cray-python
