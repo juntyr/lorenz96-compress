@@ -1,0 +1,1 @@
+{ "max_time": 1, "dt": 0.01, "forcing": 8, "k": 10000000, "ensemble_size": 1, "config": "output/config_5030266.json", "output": "/dev/null", "performance": "performance/perf_5030266", "seed": 42, "ensemble_perturbation": 0.001, "zfp_fixed_rate": 16, "compression_frequency": 0, "warmup_time": 10, "bitround_bits": 52, "compression_algorithm": "zfp" }

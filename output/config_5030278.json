@@ -1,0 +1,1 @@
+{ "max_time": 1, "dt": 0.01, "forcing": 8, "k": 1000, "ensemble_size": 1, "config": "output/config_5030278.json", "output": "/dev/null", "performance": "performance/perf_5030278", "seed": 42, "ensemble_perturbation": 0.001, "zfp_fixed_rate": 64.25, "compression_frequency": 1, "warmup_time": 10, "bitround_bits": 32, "compression_algorithm": "bitround" }

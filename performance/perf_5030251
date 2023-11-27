@@ -1,0 +1,396 @@
+compress = 0.839368 ms
+transfer_compressed = 1.84242 ms bytes = 30000000
+decompress = 3.59572 ms
+transfer_uncompressed = 10.1556 ms bytes = 160000000
+compress = 0.829928 ms
+transfer_compressed = 1.84754 ms bytes = 30000000
+decompress = 3.52964 ms
+transfer_uncompressed = 10.1449 ms bytes = 160000000
+compress = 0.832008 ms
+transfer_compressed = 1.84994 ms bytes = 30000000
+decompress = 3.51684 ms
+transfer_uncompressed = 10.0975 ms bytes = 160000000
+compress = 0.831688 ms
+transfer_compressed = 1.84946 ms bytes = 30000000
+decompress = 3.53476 ms
+transfer_uncompressed = 10.0943 ms bytes = 160000000
+compress = 0.828168 ms
+transfer_compressed = 1.84786 ms bytes = 30000000
+decompress = 3.52068 ms
+transfer_uncompressed = 10.1025 ms bytes = 160000000
+compress = 0.822248 ms
+transfer_compressed = 1.84658 ms bytes = 30000000
+decompress = 3.53204 ms
+transfer_uncompressed = 10.1119 ms bytes = 160000000
+compress = 0.829928 ms
+transfer_compressed = 1.8421 ms bytes = 30000000
+decompress = 3.521 ms
+transfer_uncompressed = 10.1121 ms bytes = 160000000
+compress = 0.827528 ms
+transfer_compressed = 1.85266 ms bytes = 30000000
+decompress = 3.53796 ms
+transfer_uncompressed = 11.3542 ms bytes = 160000000
+compress = 0.828328 ms
+transfer_compressed = 1.84178 ms bytes = 30000000
+decompress = 3.52148 ms
+transfer_uncompressed = 10.0977 ms bytes = 160000000
+compress = 0.828008 ms
+transfer_compressed = 1.85442 ms bytes = 30000000
+decompress = 3.5202 ms
+transfer_uncompressed = 10.1124 ms bytes = 160000000
+compress = 0.820168 ms
+transfer_compressed = 1.84594 ms bytes = 30000000
+decompress = 3.53572 ms
+transfer_uncompressed = 10.0921 ms bytes = 160000000
+compress = 0.828328 ms
+transfer_compressed = 1.85458 ms bytes = 30000000
+decompress = 3.52596 ms
+transfer_uncompressed = 10.0919 ms bytes = 160000000
+compress = 0.832808 ms
+transfer_compressed = 1.84402 ms bytes = 30000000
+decompress = 3.51924 ms
+transfer_uncompressed = 10.1215 ms bytes = 160000000
+compress = 0.838408 ms
+transfer_compressed = 1.84802 ms bytes = 30000000
+decompress = 3.52212 ms
+transfer_uncompressed = 10.1267 ms bytes = 160000000
+compress = 0.812808 ms
+transfer_compressed = 1.8293 ms bytes = 30000000
+decompress = 3.53188 ms
+transfer_uncompressed = 10.1531 ms bytes = 160000000
+compress = 0.831528 ms
+transfer_compressed = 1.84434 ms bytes = 30000000
+decompress = 3.53652 ms
+transfer_uncompressed = 10.1588 ms bytes = 160000000
+compress = 0.830728 ms
+transfer_compressed = 1.85634 ms bytes = 30000000
+decompress = 3.52628 ms
+transfer_uncompressed = 10.2428 ms bytes = 160000000
+compress = 0.821448 ms
+transfer_compressed = 1.8477 ms bytes = 30000000
+decompress = 3.53204 ms
+transfer_uncompressed = 10.3587 ms bytes = 160000000
+compress = 0.810888 ms
+transfer_compressed = 1.88418 ms bytes = 30000000
+decompress = 3.52036 ms
+transfer_uncompressed = 10.1481 ms bytes = 160000000
+compress = 0.830408 ms
+transfer_compressed = 1.8533 ms bytes = 30000000
+decompress = 3.52148 ms
+transfer_uncompressed = 10.1391 ms bytes = 160000000
+compress = 0.829448 ms
+transfer_compressed = 1.91986 ms bytes = 30000000
+decompress = 3.5466 ms
+transfer_uncompressed = 10.1132 ms bytes = 160000000
+compress = 0.808968 ms
+transfer_compressed = 1.83858 ms bytes = 30000000
+decompress = 3.72628 ms
+transfer_uncompressed = 10.0793 ms bytes = 160000000
+compress = 0.805608 ms
+transfer_compressed = 1.81506 ms bytes = 30000000
+decompress = 3.517 ms
+transfer_uncompressed = 10.103 ms bytes = 160000000
+compress = 0.803528 ms
+transfer_compressed = 1.81714 ms bytes = 30000000
+decompress = 3.50435 ms
+transfer_uncompressed = 10.0644 ms bytes = 160000000
+compress = 0.823688 ms
+transfer_compressed = 1.84018 ms bytes = 30000000
+decompress = 3.50099 ms
+transfer_uncompressed = 10.0793 ms bytes = 160000000
+compress = 0.802728 ms
+transfer_compressed = 1.81714 ms bytes = 30000000
+decompress = 3.50115 ms
+transfer_uncompressed = 10.0665 ms bytes = 160000000
+compress = 0.802088 ms
+transfer_compressed = 1.82258 ms bytes = 30000000
+decompress = 3.49444 ms
+transfer_uncompressed = 10.0675 ms bytes = 160000000
+compress = 0.800488 ms
+transfer_compressed = 1.81938 ms bytes = 30000000
+decompress = 3.50548 ms
+transfer_uncompressed = 10.0662 ms bytes = 160000000
+compress = 0.800968 ms
+transfer_compressed = 1.81554 ms bytes = 30000000
+decompress = 3.49875 ms
+transfer_uncompressed = 10.0745 ms bytes = 160000000
+compress = 0.824968 ms
+transfer_compressed = 1.83634 ms bytes = 30000000
+decompress = 3.51764 ms
+transfer_uncompressed = 10.0953 ms bytes = 160000000
+compress = 0.824008 ms
+transfer_compressed = 1.83954 ms bytes = 30000000
+decompress = 3.50324 ms
+transfer_uncompressed = 10.0811 ms bytes = 160000000
+compress = 0.817768 ms
+transfer_compressed = 1.83666 ms bytes = 30000000
+decompress = 3.51012 ms
+transfer_uncompressed = 10.0883 ms bytes = 160000000
+compress = 0.826728 ms
+transfer_compressed = 1.83826 ms bytes = 30000000
+decompress = 3.50947 ms
+transfer_uncompressed = 10.0867 ms bytes = 160000000
+compress = 0.818728 ms
+transfer_compressed = 1.83906 ms bytes = 30000000
+decompress = 3.51044 ms
+transfer_uncompressed = 10.1311 ms bytes = 160000000
+compress = 0.798408 ms
+transfer_compressed = 1.8205 ms bytes = 30000000
+decompress = 3.50164 ms
+transfer_uncompressed = 10.0879 ms bytes = 160000000
+compress = 0.790728 ms
+transfer_compressed = 1.82002 ms bytes = 30000000
+decompress = 3.50403 ms
+transfer_uncompressed = 10.0875 ms bytes = 160000000
+compress = 0.804808 ms
+transfer_compressed = 1.81634 ms bytes = 30000000
+decompress = 3.50148 ms
+transfer_uncompressed = 10.0636 ms bytes = 160000000
+compress = 0.812008 ms
+transfer_compressed = 1.82418 ms bytes = 30000000
+decompress = 3.50068 ms
+transfer_uncompressed = 10.0716 ms bytes = 160000000
+compress = 0.818888 ms
+transfer_compressed = 1.83298 ms bytes = 30000000
+decompress = 3.51268 ms
+transfer_uncompressed = 10.0788 ms bytes = 160000000
+compress = 0.824328 ms
+transfer_compressed = 1.83842 ms bytes = 30000000
+decompress = 3.51492 ms
+transfer_uncompressed = 10.0953 ms bytes = 160000000
+compress = 0.801928 ms
+transfer_compressed = 1.81826 ms bytes = 30000000
+decompress = 3.505 ms
+transfer_uncompressed = 10.1214 ms bytes = 160000000
+compress = 0.801608 ms
+transfer_compressed = 1.81442 ms bytes = 30000000
+decompress = 3.49139 ms
+transfer_uncompressed = 10.0617 ms bytes = 160000000
+compress = 0.804328 ms
+transfer_compressed = 1.82098 ms bytes = 30000000
+decompress = 3.5034 ms
+transfer_uncompressed = 10.078 ms bytes = 160000000
+compress = 0.803848 ms
+transfer_compressed = 1.81874 ms bytes = 30000000
+decompress = 3.50724 ms
+transfer_uncompressed = 10.0809 ms bytes = 160000000
+compress = 0.804008 ms
+transfer_compressed = 1.81618 ms bytes = 30000000
+decompress = 3.50692 ms
+transfer_uncompressed = 10.0583 ms bytes = 160000000
+compress = 0.824008 ms
+transfer_compressed = 1.83922 ms bytes = 30000000
+decompress = 3.50643 ms
+transfer_uncompressed = 10.0879 ms bytes = 160000000
+compress = 0.824008 ms
+transfer_compressed = 1.83682 ms bytes = 30000000
+decompress = 3.51844 ms
+transfer_uncompressed = 10.0956 ms bytes = 160000000
+compress = 0.821608 ms
+transfer_compressed = 1.8429 ms bytes = 30000000
+decompress = 3.51139 ms
+transfer_uncompressed = 10.0894 ms bytes = 160000000
+compress = 0.824008 ms
+transfer_compressed = 1.84178 ms bytes = 30000000
+decompress = 3.50548 ms
+transfer_uncompressed = 10.0999 ms bytes = 160000000
+compress = 0.825448 ms
+transfer_compressed = 1.84194 ms bytes = 30000000
+decompress = 3.50788 ms
+transfer_uncompressed = 10.1017 ms bytes = 160000000
+compress = 0.824008 ms
+transfer_compressed = 1.83858 ms bytes = 30000000
+decompress = 3.51011 ms
+transfer_uncompressed = 10.0852 ms bytes = 160000000
+compress = 0.825928 ms
+transfer_compressed = 1.84002 ms bytes = 30000000
+decompress = 3.49876 ms
+transfer_uncompressed = 10.2745 ms bytes = 160000000
+compress = 0.824168 ms
+transfer_compressed = 1.8389 ms bytes = 30000000
+decompress = 3.50132 ms
+transfer_uncompressed = 12.3329 ms bytes = 160000000
+compress = 0.812968 ms
+transfer_compressed = 1.83234 ms bytes = 30000000
+decompress = 3.51316 ms
+transfer_uncompressed = 10.0702 ms bytes = 160000000
+compress = 0.804488 ms
+transfer_compressed = 1.81682 ms bytes = 30000000
+decompress = 3.50803 ms
+transfer_uncompressed = 10.1439 ms bytes = 160000000
+compress = 0.802888 ms
+transfer_compressed = 1.86642 ms bytes = 30000000
+decompress = 3.52372 ms
+transfer_uncompressed = 10.0743 ms bytes = 160000000
+compress = 0.825928 ms
+transfer_compressed = 1.83714 ms bytes = 30000000
+decompress = 3.5042 ms
+transfer_uncompressed = 10.0739 ms bytes = 160000000
+compress = 0.822728 ms
+transfer_compressed = 1.84114 ms bytes = 30000000
+decompress = 3.50212 ms
+transfer_uncompressed = 10.0924 ms bytes = 160000000
+compress = 0.804168 ms
+transfer_compressed = 1.8165 ms bytes = 30000000
+decompress = 3.50307 ms
+transfer_uncompressed = 10.1316 ms bytes = 160000000
+compress = 0.803848 ms
+transfer_compressed = 1.81522 ms bytes = 30000000
+decompress = 3.49699 ms
+transfer_uncompressed = 10.0607 ms bytes = 160000000
+compress = 0.803208 ms
+transfer_compressed = 1.81314 ms bytes = 30000000
+decompress = 3.50324 ms
+transfer_uncompressed = 10.0596 ms bytes = 160000000
+compress = 0.802888 ms
+transfer_compressed = 1.82082 ms bytes = 30000000
+decompress = 3.49668 ms
+transfer_uncompressed = 10.0623 ms bytes = 160000000
+compress = 0.803688 ms
+transfer_compressed = 1.81826 ms bytes = 30000000
+decompress = 3.50196 ms
+transfer_uncompressed = 10.0705 ms bytes = 160000000
+compress = 0.800968 ms
+transfer_compressed = 1.81874 ms bytes = 30000000
+decompress = 3.5074 ms
+transfer_uncompressed = 10.0623 ms bytes = 160000000
+compress = 0.809768 ms
+transfer_compressed = 1.81826 ms bytes = 30000000
+decompress = 3.50708 ms
+transfer_uncompressed = 10.0771 ms bytes = 160000000
+compress = 0.806088 ms
+transfer_compressed = 1.81394 ms bytes = 30000000
+decompress = 3.49316 ms
+transfer_uncompressed = 10.0675 ms bytes = 160000000
+compress = 0.825288 ms
+transfer_compressed = 1.91154 ms bytes = 30000000
+decompress = 3.51012 ms
+transfer_uncompressed = 10.2185 ms bytes = 160000000
+compress = 0.804328 ms
+transfer_compressed = 1.81842 ms bytes = 30000000
+decompress = 3.50196 ms
+transfer_uncompressed = 10.1174 ms bytes = 160000000
+compress = 0.802888 ms
+transfer_compressed = 1.81778 ms bytes = 30000000
+decompress = 3.50803 ms
+transfer_uncompressed = 10.0718 ms bytes = 160000000
+compress = 0.803208 ms
+transfer_compressed = 1.8205 ms bytes = 30000000
+decompress = 3.50307 ms
+transfer_uncompressed = 10.0961 ms bytes = 160000000
+compress = 0.824968 ms
+transfer_compressed = 1.83794 ms bytes = 30000000
+decompress = 3.51764 ms
+transfer_uncompressed = 10.095 ms bytes = 160000000
+compress = 0.825128 ms
+transfer_compressed = 1.83378 ms bytes = 30000000
+decompress = 3.51588 ms
+transfer_uncompressed = 10.1908 ms bytes = 160000000
+compress = 0.823688 ms
+transfer_compressed = 1.8389 ms bytes = 30000000
+decompress = 3.50787 ms
+transfer_uncompressed = 10.095 ms bytes = 160000000
+compress = 0.826088 ms
+transfer_compressed = 1.83794 ms bytes = 30000000
+decompress = 3.48916 ms
+transfer_uncompressed = 10.1708 ms bytes = 160000000
+compress = 0.817608 ms
+transfer_compressed = 1.83314 ms bytes = 30000000
+decompress = 3.50404 ms
+transfer_uncompressed = 10.4291 ms bytes = 160000000
+compress = 0.801928 ms
+transfer_compressed = 1.88994 ms bytes = 30000000
+decompress = 3.50084 ms
+transfer_uncompressed = 10.1929 ms bytes = 160000000
+compress = 0.804808 ms
+transfer_compressed = 1.86514 ms bytes = 30000000
+decompress = 3.50804 ms
+transfer_uncompressed = 10.0764 ms bytes = 160000000
+compress = 0.801128 ms
+transfer_compressed = 1.82818 ms bytes = 30000000
+decompress = 3.50099 ms
+transfer_uncompressed = 10.0836 ms bytes = 160000000
+compress = 0.826408 ms
+transfer_compressed = 1.83682 ms bytes = 30000000
+decompress = 3.5106 ms
+transfer_uncompressed = 10.0825 ms bytes = 160000000
+compress = 0.824648 ms
+transfer_compressed = 1.83506 ms bytes = 30000000
+decompress = 3.51412 ms
+transfer_uncompressed = 10.0847 ms bytes = 160000000
+compress = 0.822088 ms
+transfer_compressed = 1.83458 ms bytes = 30000000
+decompress = 3.4946 ms
+transfer_uncompressed = 10.0878 ms bytes = 160000000
+compress = 0.801768 ms
+transfer_compressed = 1.81458 ms bytes = 30000000
+decompress = 3.49571 ms
+transfer_uncompressed = 10.0649 ms bytes = 160000000
+compress = 0.803208 ms
+transfer_compressed = 1.82018 ms bytes = 30000000
+decompress = 3.4946 ms
+transfer_uncompressed = 10.0699 ms bytes = 160000000
+compress = 0.803048 ms
+transfer_compressed = 1.85138 ms bytes = 30000000
+decompress = 3.50148 ms
+transfer_uncompressed = 10.0603 ms bytes = 160000000
+compress = 0.823208 ms
+transfer_compressed = 1.83698 ms bytes = 30000000
+decompress = 3.50564 ms
+transfer_uncompressed = 10.0865 ms bytes = 160000000
+compress = 0.815688 ms
+transfer_compressed = 1.8421 ms bytes = 30000000
+decompress = 3.51716 ms
+transfer_uncompressed = 10.0886 ms bytes = 160000000
+compress = 0.806568 ms
+transfer_compressed = 1.8189 ms bytes = 30000000
+decompress = 3.51492 ms
+transfer_uncompressed = 10.1289 ms bytes = 160000000
+compress = 0.803048 ms
+transfer_compressed = 1.81602 ms bytes = 30000000
+decompress = 3.50403 ms
+transfer_uncompressed = 10.0516 ms bytes = 160000000
+compress = 0.802408 ms
+transfer_compressed = 1.8189 ms bytes = 30000000
+decompress = 3.49715 ms
+transfer_uncompressed = 10.0668 ms bytes = 160000000
+compress = 0.800008 ms
+transfer_compressed = 1.81474 ms bytes = 30000000
+decompress = 3.49508 ms
+transfer_uncompressed = 10.0726 ms bytes = 160000000
+compress = 0.800008 ms
+transfer_compressed = 1.81314 ms bytes = 30000000
+decompress = 3.50148 ms
+transfer_uncompressed = 10.0665 ms bytes = 160000000
+compress = 0.825448 ms
+transfer_compressed = 1.84546 ms bytes = 30000000
+decompress = 3.49844 ms
+transfer_uncompressed = 10.0953 ms bytes = 160000000
+compress = 0.823208 ms
+transfer_compressed = 1.8381 ms bytes = 30000000
+decompress = 3.50564 ms
+transfer_uncompressed = 10.1395 ms bytes = 160000000
+compress = 0.819048 ms
+transfer_compressed = 1.8301 ms bytes = 30000000
+decompress = 3.509 ms
+transfer_uncompressed = 10.0932 ms bytes = 160000000
+compress = 0.818728 ms
+transfer_compressed = 1.8349 ms bytes = 30000000
+decompress = 3.50724 ms
+transfer_uncompressed = 10.0694 ms bytes = 160000000
+compress = 0.814728 ms
+transfer_compressed = 1.83298 ms bytes = 30000000
+decompress = 3.509 ms
+transfer_uncompressed = 10.087 ms bytes = 160000000
+compress = 0.813448 ms
+transfer_compressed = 1.83986 ms bytes = 30000000
+decompress = 3.49844 ms
+transfer_uncompressed = 10.0967 ms bytes = 160000000
+compress = 0.826568 ms
+transfer_compressed = 1.84098 ms bytes = 30000000
+decompress = 3.50036 ms
+transfer_uncompressed = 10.1028 ms bytes = 160000000
+compress = 0.822088 ms
+transfer_compressed = 1.83922 ms bytes = 30000000
+decompress = 3.51284 ms
+transfer_uncompressed = 12.0976 ms bytes = 160000000
