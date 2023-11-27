@@ -2,8 +2,8 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: Lorenz96 Online Compression
-message: Results from the ESiWACE hackathon at CSC
+title: Exploring online compression with the Lorenz96 model
+message: Results from the ESiWACE3 hackathon at CSC
 type: software
 authors:
   - given-names: Juniper
@@ -35,6 +35,6 @@ keywords:
   - ESiWACE3
   - ZFP
 license: Apache-2.0
-commit: v1.0.0
-version: 1.0.0
-date-released: '2023-11-26'
+commit: v1.0.1
+version: 1.0.1
+date-released: '2023-11-27'
