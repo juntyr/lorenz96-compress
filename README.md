@@ -81,8 +81,10 @@ at your option.
 
 ---
 
-- The [`zfp/`](https://github.com/LLNL/zfp/tree/e935a81d716a9e1d464ed214ed3c1c28157259ec) submodule, is licensed under the BSD 3-Clause license ([`zfp/LICENSE`](https://github.com/LLNL/zfp/blob/e935a81d716a9e1d464ed214ed3c1c28157259ec/LICENSE) and [`zfp/NOTICE`](https://github.com/LLNL/zfp/blob/e935a81d716a9e1d464ed214ed3c1c28157259ec/NOTICE)).
 - The [`cmdparser.hpp`](cmdparser.hpp) file, which is part of Florian Rappl's [C++ CmdParser utility](https://github.com/FlorianRappl/CmdParser), is licensed under the MIT license ([`FlorianRappl/CmdParser/LICENSE`](https://github.com/FlorianRappl/CmdParser/blob/master/LICENSE)).
+- The [`output/`](output/) folder, which contains the experiment output files, is licensed under the CC0 1.0 license ([`output/LICENSE`](output/LICENSE) or https://creativecommons.org/publicdomain/zero/1.0/).
+- The [`performance/`](performance/) folder, which contains the experiment performance files, is licensed under the CC0 1.0 license ([`performance/LICENSE`](performance/LICENSE) or https://creativecommons.org/publicdomain/zero/1.0/).
+- The [`zfp/`](https://github.com/LLNL/zfp/tree/e935a81d716a9e1d464ed214ed3c1c28157259ec) submodule, is licensed under the BSD 3-Clause license ([`zfp/LICENSE`](https://github.com/LLNL/zfp/blob/e935a81d716a9e1d464ed214ed3c1c28157259ec/LICENSE) and [`zfp/NOTICE`](https://github.com/LLNL/zfp/blob/e935a81d716a9e1d464ed214ed3c1c28157259ec/NOTICE)).
 
 ## Citation
 
